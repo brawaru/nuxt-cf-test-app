@@ -1,0 +1,19 @@
+{
+  "name": "nuxt-app",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "pages:dev": "wrangler pages dev --compatibility-date=2023-07-08 --proxy 3000 -- npm run dev",
+    "pages:deploy": "NODE_VERSION=17 npm run generate && wrangler pages deploy ./dist"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "latest",
+    "@types/node": "^18.16.19",
+    "nuxt": "^3.6.2",
+    "wrangler": "^3.1.2"
+  }
+}
