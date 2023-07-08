@@ -1,0 +1,9 @@
+
+name = "nuxt-cf-test-app"
+main = "./.output/server/index.mjs"
+workers_dev = true
+compatibility_date = "2022-09-10"
+account_id = "ca796fc0427365f0707f095c94dd6003"
+
+[site]
+bucket = ".output/public"

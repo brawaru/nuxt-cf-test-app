@@ -1,6 +1,6 @@
 export default cachedEventHandler(() => {
   return { time: Date.now() }
 }, {
-  maxAge: 60,
+  maxAge: 10,
   name: 'timestamp'
 })
