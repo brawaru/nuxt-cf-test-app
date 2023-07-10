@@ -50,6 +50,7 @@ jobs:
           NITRO_PRESET: cloudflare-module
 
       - name: Publish to Cloudflare
-        run: pnpm wrangler deploy
+        run: pnpm wrangler deploy --name "gh-${{ github.ref_name }}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_KV_BINDING_CACHE: CACHE

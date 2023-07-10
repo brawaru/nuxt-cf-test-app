@@ -1,9 +1,10 @@
 name = "nuxt-cf-test-app"
 compatibility_date = "2023-06-28"
 account_id = "ca796fc0427365f0707f095c94dd6003"
+main = "./.output/server/index.mjs"
 
 [[kv_namespaces]]
-binding = "STORAGE"
+binding = "CACHE"
 id = "d608b447885a4309955a0d028761165e"
 
 [site]
