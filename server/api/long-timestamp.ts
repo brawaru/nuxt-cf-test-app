@@ -1,4 +1,4 @@
 export default cachedEventHandler(() => ({ time: Date.now() }), {
-  maxAge: 10,
-  name: "timestamp",
+  maxAge: 100_000,
+  name: "long-timestamp",
 });
