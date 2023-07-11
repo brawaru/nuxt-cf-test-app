@@ -32,6 +32,7 @@ export function getNitroStorages(): StorageMounts | undefined {
   switch (process.env.NITRO_PRESET) {
     case "cloudflare":
     case "cloudflare-module":
+    case "cloudflare-pages":
       if (process.env.CF_KV_BINDING_CACHE) {
         return {
           cache: {
