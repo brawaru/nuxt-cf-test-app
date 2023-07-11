@@ -1,18 +1,20 @@
 diff --git a/dist/runtime/cache.mjs b/dist/runtime/cache.mjs
-index f0e248de40c3abafbdb4726c5603d3b9bc7c2986..264902e3cd753dd2a6e59c4157d1157b0996b144 100644
+index f0e248de40c3abafbdb4726c5603d3b9bc7c2986..8f86a5c537cb320d5da8203c30b1d7fb176e3f39 100644
 --- a/dist/runtime/cache.mjs
 +++ b/dist/runtime/cache.mjs
-@@ -21,12 +21,41 @@ export function defineCachedFunction(fn, opts = {}) {
+@@ -21,12 +21,44 @@ export function defineCachedFunction(fn, opts = {}) {
    const validate = opts.validate || (() => true);
    async function get(key, resolver, shouldInvalidateCache) {
      const cacheKey = [opts.base, group, name, key + ".json"].filter(Boolean).join(":").replace(/:\/$/, ":index");
 -    const entry = await useStorage().getItem(cacheKey) || {};
 +    const entry = await (async () => {
++      console.log(`retrieving the cache entry ${cacheKey}`)
 +      const storageEntry = await useStorage().getItem(cacheKey)
 +      if (!storageEntry) {
 +        console.log('no cache entry, continuing with nothing')
 +        return {}
 +      }
++      console.log('retreived cache entry')
 +      return storageEntry
 +    })();
      const ttl = (opts.maxAge ?? opts.maxAge ?? 0) * 1e3;
@@ -41,15 +43,21 @@ index f0e248de40c3abafbdb4726c5603d3b9bc7c2986..264902e3cd753dd2a6e59c4157d1157b
 +        return true;
 +      }
 +      
++      console.log('cache is up-to-date')
 +      return false;
 +    })();
      const _resolve = async () => {
        const isPending = pending[key];
        if (!isPending) {
-@@ -52,7 +81,11 @@ export function defineCachedFunction(fn, opts = {}) {
+@@ -51,8 +83,15 @@ export function defineCachedFunction(fn, opts = {}) {
+         entry.integrity = integrity;
          delete pending[key];
          if (validate(entry)) {
-           useStorage().setItem(cacheKey, entry).catch((error) => console.error("[nitro] [cache]", error));
+-          useStorage().setItem(cacheKey, entry).catch((error) => console.error("[nitro] [cache]", error));
++          console.log(`saving cache entry: ${cacheKey}`)
++          useStorage().setItem(cacheKey, entry).catch((error) => console.error("[nitro] [cache]", error)).then(() => {
++            console.log('saved cache entry')
++          });
 +        } else {
 +          console.log('entry validation failed, not saving cache')
          }
