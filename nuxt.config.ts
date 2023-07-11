@@ -114,8 +114,11 @@ function getNitroStorages(): StorageMounts | undefined {
       if (!missingVars.length) {
         return {
           cache: {
-            driver: "vercel-kv",
+            driver: "unstorage/drivers/vercel-kv",
             base: process.env.VERCEL_KV_CACHE_BASE || "cache",
+            url: process.env.KV_REST_API_URL,
+            token: process.env.KV_REST_API_TOKEN,
+            env: false,
           },
         };
       }
