@@ -1,0 +1,60 @@
+diff --git a/dist/runtime/cache.mjs b/dist/runtime/cache.mjs
+index f0e248de40c3abafbdb4726c5603d3b9bc7c2986..264902e3cd753dd2a6e59c4157d1157b0996b144 100644
+--- a/dist/runtime/cache.mjs
++++ b/dist/runtime/cache.mjs
+@@ -21,12 +21,41 @@ export function defineCachedFunction(fn, opts = {}) {
+   const validate = opts.validate || (() => true);
+   async function get(key, resolver, shouldInvalidateCache) {
+     const cacheKey = [opts.base, group, name, key + ".json"].filter(Boolean).join(":").replace(/:\/$/, ":index");
+-    const entry = await useStorage().getItem(cacheKey) || {};
++    const entry = await (async () => {
++      const storageEntry = await useStorage().getItem(cacheKey)
++      if (!storageEntry) {
++        console.log('no cache entry, continuing with nothing')
++        return {}
++      }
++      return storageEntry
++    })();
+     const ttl = (opts.maxAge ?? opts.maxAge ?? 0) * 1e3;
+     if (ttl) {
+       entry.expires = Date.now() + ttl;
+     }
+-    const expired = shouldInvalidateCache || entry.integrity !== integrity || ttl && Date.now() - (entry.mtime || 0) > ttl || !validate(entry);
++    const expired = (() => {
++      if (shouldInvalidateCache) {
++        console.log('cache expired: forced invalidation');
++        return true;
++      }
++      
++      if (entry.integrity !== integrity) {
++        console.log('cache expired: integrity check failed');
++        return true;
++      }
++      
++      if (ttl && Date.now() - (entry.mtime || 0) > ttl) {
++        console.log('cache expired: TTL exceeded');
++        return true;
++      }
++      
++      if (!validate(entry)) {
++        console.log('cache expired: validation failed');
++        return true;
++      }
++      
++      return false;
++    })();
+     const _resolve = async () => {
+       const isPending = pending[key];
+       if (!isPending) {
+@@ -52,7 +81,11 @@ export function defineCachedFunction(fn, opts = {}) {
+         delete pending[key];
+         if (validate(entry)) {
+           useStorage().setItem(cacheKey, entry).catch((error) => console.error("[nitro] [cache]", error));
++        } else {
++          console.log('entry validation failed, not saving cache')
+         }
++      } else {
++        console.log('not pending, not caching')
+       }
+     };
+     const _resolvePromise = expired ? _resolve() : Promise.resolve();
