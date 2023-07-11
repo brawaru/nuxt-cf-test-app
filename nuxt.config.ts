@@ -35,7 +35,7 @@ export function getNitroStorages(): StorageMounts | undefined {
     case "cloudflare-pages":
       if (process.env.CF_KV_BINDING_CACHE) {
         return {
-          cache: {
+          "/cache": {
             driver: "cloudflare-kv-binding",
             binding: process.env.CF_KV_BINDING_CACHE,
           },
@@ -88,7 +88,7 @@ export function getNitroStorages(): StorageMounts | undefined {
     case "vercel-edge":
       if (process.env.KV_REST_API_TOKEN && process.env.KV_REST_API_URL) {
         return {
-          cache: {
+          "/cache": {
             driver: "vercel-kv",
             base: process.env.VERCEL_KV_CACHE_BASE || "cache",
           },
