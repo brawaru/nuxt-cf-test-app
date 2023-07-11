@@ -24,15 +24,44 @@ declare global {
        * @default 'cache'
        */
       VERCEL_KV_CACHE_BASE?: string;
+
+      /**
+       * Cache storage option.
+       * @default '<computed based on NITRO_PRESET>'
+       */
+      CACHE_STORAGE_OPTION?: string;
     }
   }
 }
 
-export function getNitroStorages(): StorageMounts | undefined {
+function getNitroStorageOption() {
+  const option = process.env.CACHE_STORAGE_OPTION;
+  if (option) return option;
+
   switch (process.env.NITRO_PRESET) {
     case "cloudflare":
     case "cloudflare-module":
     case "cloudflare-pages":
+      return "cloudflare-kv";
+    case "vercel":
+    case "vercel-edge":
+      return "vercel-kv";
+  }
+
+  return null;
+}
+
+function getMissingVars(vars: string[]) {
+  const missing = [];
+  for (const varName of vars) {
+    if (!process.env[varName]) missing.push(varName);
+  }
+  return missing;
+}
+
+function getNitroStorages(): StorageMounts | undefined {
+  switch (getNitroStorageOption()) {
+    case "cloudflare-kv": {
       if (process.env.CF_KV_BINDING_CACHE) {
         return {
           cache: {
@@ -43,50 +72,46 @@ export function getNitroStorages(): StorageMounts | undefined {
       }
 
       console.warn(
-        "You are building Nuxt with Cloudflare Worker Nitro preset, however you have not provided `CF_KV_BINDING_CACHE` environment variable. The cache will use in-memory storage that is not persistent in workers."
+        "You wanted to use `cloudflare-kv` cache store option, however you have not provided `CF_KV_BINDING_CACHE` environment variable. The cache will use in-memory storage that is not persistent in workers."
       );
 
       break;
-    // case "cloudflare-pages":
-    //   if (
-    //     process.env.CF_KV_REST_ACCOUNT_ID &&
-    //     process.env.CF_KV_REST_API_TOKEN &&
-    //     process.env.CF_KV_REST_CACHE_NSID
-    //   ) {
-    //     return {
-    //       cache: {
-    //         driver: "cloudflare-kv-http",
-    //         accountId: process.env.CF_KV_REST_ACCOUNT_ID,
-    //         namespaceId: process.env.CF_KV_REST_CACHE_NSID,
-    //         apiToken: process.env.CF_KV_REST_API_TOKEN,
-    //       },
-    //     };
-    //   }
+    }
+    case "cloudflare-kv-http": {
+      const missingVars = getMissingVars([
+        "CF_KV_REST_ACCOUNT_ID",
+        "CF_KV_REST_CACHE_NSID",
+        "CF_KV_REST_API_TOKEN",
+      ]);
 
-    //   const missingVarsList = (() => {
-    //     const expectedVars: (keyof NodeJS.ProcessEnv)[] = [
-    //       "CF_KV_REST_ACCOUNT_ID",
-    //       "CF_KV_REST_CACHE_NSID",
-    //       "CF_KV_REST_API_TOKEN",
-    //     ];
+      if (!missingVars.length) {
+        return {
+          cache: {
+            driver: "cloudflare-kv-http",
+            accountId: process.env.CF_KV_REST_ACCOUNT_ID,
+            namespaceId: process.env.CF_KV_REST_CACHE_NSID,
+            apiToken: process.env.CF_KV_REST_API_TOKEN,
+          },
+        };
+      }
 
-    //     const missingVars: string[] = [];
+      console.warn(
+        `You wanted to use \`cloudflare-kv-http\` cache store option, however you have not provided ${missingVars
+          .map((varName) => `\`${varName}\``)
+          .join(
+            ", "
+          )} environment variable(s). The cache will use in-memory storage that is not persistent in functions.`
+      );
 
-    //     for (const expectedVar of expectedVars) {
-    //       if (!process.env[expectedVar]) missingVars.push(`\`${expectedVar}\``);
-    //     }
+      break;
+    }
+    case "vercel-kv":
+      const missingVars = getMissingVars([
+        "KV_REST_API_TOKEN",
+        "KV_REST_API_URL",
+      ]);
 
-    //     return missingVars.join(", ");
-    //   })();
-
-    //   console.warn(
-    //     `You are building Nuxt with Cloudflare Pages Nitro preset, however you have not provided ${missingVarsList} environment variable(s). The cache will use in-memory storage that is not persistent in functions.`
-    //   );
-
-    //   break;
-    case "vercel":
-    case "vercel-edge":
-      if (process.env.KV_REST_API_TOKEN && process.env.KV_REST_API_URL) {
+      if (!missingVars.length) {
         return {
           cache: {
             driver: "vercel-kv",
@@ -94,12 +119,17 @@ export function getNitroStorages(): StorageMounts | undefined {
           },
         };
       }
+
+      console.log(
+        `You wanted to use \`vercel-kv\` cache store option, however you have not provided ${missingVars
+          .map((varName) => `\`${varName}\``)
+          .join(
+            ", "
+          )} environment variable. The cache will use in-memory storage taht is not persistent in serverless functions.`
+      );
+
       break;
   }
-
-  console.log(
-    `Using in-memory storage for provider ${process.env.NITRO_PRESET}`
-  );
 
   return undefined; // in-memory
 }

@@ -48,6 +48,7 @@ jobs:
         run: pnpm build
         env:
           NITRO_PRESET: cloudflare-module
+          CACHE_STORAGE_OPTION: cloudflare-kv
           CF_KV_BINDING_CACHE: CACHE
 
       - name: Publish to Cloudflare
