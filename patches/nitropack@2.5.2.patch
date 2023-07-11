@@ -1,15 +1,25 @@
 diff --git a/dist/runtime/cache.mjs b/dist/runtime/cache.mjs
-index f0e248de40c3abafbdb4726c5603d3b9bc7c2986..8f86a5c537cb320d5da8203c30b1d7fb176e3f39 100644
+index f0e248de40c3abafbdb4726c5603d3b9bc7c2986..0379bfc63ab1c7b44fbf918394df529d04079f66 100644
 --- a/dist/runtime/cache.mjs
 +++ b/dist/runtime/cache.mjs
-@@ -21,12 +21,44 @@ export function defineCachedFunction(fn, opts = {}) {
+@@ -21,12 +21,54 @@ export function defineCachedFunction(fn, opts = {}) {
    const validate = opts.validate || (() => true);
    async function get(key, resolver, shouldInvalidateCache) {
      const cacheKey = [opts.base, group, name, key + ".json"].filter(Boolean).join(":").replace(/:\/$/, ":index");
 -    const entry = await useStorage().getItem(cacheKey) || {};
 +    const entry = await (async () => {
 +      console.log(`retrieving the cache entry ${cacheKey}`)
-+      const storageEntry = await useStorage().getItem(cacheKey)
++      const storage = useStorage()
++      console.log(
++        storage
++          .getMounts()
++          .map(({ base, driver: { name: driverName, options: driverOptions } }) => ({
++            base,
++            driverName,
++            driverOptions,
++          }))
++      )
++      const storageEntry = await storage.getItem(cacheKey)
 +      if (!storageEntry) {
 +        console.log('no cache entry, continuing with nothing')
 +        return {}
@@ -49,7 +59,7 @@ index f0e248de40c3abafbdb4726c5603d3b9bc7c2986..8f86a5c537cb320d5da8203c30b1d7fb
      const _resolve = async () => {
        const isPending = pending[key];
        if (!isPending) {
-@@ -51,8 +83,15 @@ export function defineCachedFunction(fn, opts = {}) {
+@@ -51,8 +93,15 @@ export function defineCachedFunction(fn, opts = {}) {
          entry.integrity = integrity;
          delete pending[key];
          if (validate(entry)) {
